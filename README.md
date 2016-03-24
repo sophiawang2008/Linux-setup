@@ -80,3 +80,24 @@ Marvell>> editenv bootargs
 
 androidboot.console=ttyS0 console=ttyS0,115200 root=/dev/mmcblk0p3 rw rootwait init=/init panic_debug uart_dma crashkernel=4k@0x8140000 user_debug=31 earlyprintk=uart8250-32bit,0xd4017000 androidboot.lcd=720p cma=20M cgroup_disable=memory ddr_mode=2 RDCA=08140400 cpmem=32M@0x06000000 androidboot.exist.cp=18 androidboot.hardware=armada38x androidboot.selinux=permissive 
 
+Shell access over USB
+
+The Charger presents itself over USB as an Ethernet device with the IP address 172.16.0.10. On an OS X host, it will appear in Network Preferences as "RNDIS/Ethernet Gadget". Shell access can be had by using ssh:
+
+    Download the private key and put it someplace convenient
+    Configure the gadget for a manual IP address in the same subnet (eg. 172.16.0.5)
+    ssh -i <path_to_private_key> root@172.16.0.10
+    additionally you may wish to add the private key to your ssh agent ssh-add <path_to_private_key> and then connect with ssh root@172.16.0.10
+
+Rake Tasks
+
+Take advantage of preconfigured rake tasks to work with Sproutling chargers more easily.
+
+    Install ruby (preferrably with RVM, instructions on website)
+    Check ruby installation with ruby -v
+    Install bundle with gem install bundle (may need sudo)
+    Install required gems with bundle install
+    Add private key to ssh agent with ssh-add <path_to_private_key>
+    Try connection with charger using rake ssh
+    Use rake -T to view all available commands
+
