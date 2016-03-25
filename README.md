@@ -463,3 +463,14 @@ java popup
 Click on the "more information" button and not the "Ok". If you click on the Ok button then the popup is closed with no action. After clicking on the correct button you will be taken to the Oracle website where you can select the the JDK from the options for OS X and begin the download.
 
 u-boot environment variable setting, for example: when u-boot image exceeds 1M, in uboot/include/configs/armada_38x.h has #define CONFIG_UBOOT_SIZE 0x180000
+
+   Download the mainline ubuntu arm 64bit version, 14.04 or 15.04
+http://cdimage.ubuntu.com/ubuntu-core/releases/14.04/release/ubuntu-core-14.04-core-arm64.tar.gz
+2.       Vim  /etc/init/rc-sysinit.conf
+env DEFAULT_RUNLEVEL=3
+3.       Vim /etc/password, remove the password of root
+4.       Create a new file /etc/init/ttyS0.conf
+start on stopped rc or RUNLEVEL=[12345]
+stop on runlevel [!12345]
+respawn
+exec /sbin/getty -L 115200 ttyS0 vt100
