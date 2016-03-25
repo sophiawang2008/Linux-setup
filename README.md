@@ -461,3 +461,5 @@ If you see the following popup:
 java popup
 
 Click on the "more information" button and not the "Ok". If you click on the Ok button then the popup is closed with no action. After clicking on the correct button you will be taken to the Oracle website where you can select the the JDK from the options for OS X and begin the download.
+
+u-boot environment variable setting, for example: when u-boot image exceeds 1M, in uboot/include/configs/armada_38x.h has #define CONFIG_UBOOT_SIZE 0x180000
