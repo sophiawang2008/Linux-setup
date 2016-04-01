@@ -480,6 +480,7 @@ How to install Java in Ubuntu
 2. https://techhelpkb.com/enable-and-disable-java-in-firefox/
 
 How to enable port in 
-1. netstat -ntl
-2. install gufw (enable in rules)
-3. 
+1. check port whether open or not
+   sudo netstat -tulnp | grep portnumber
+   if no output, means the port is closed
+2. use iptables to open the port
