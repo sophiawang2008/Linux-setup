@@ -474,3 +474,12 @@ start on stopped rc or RUNLEVEL=[12345]
 stop on runlevel [!12345]
 respawn
 exec /sbin/getty -L 115200 ttyS0 vt100
+
+How to install Java in Ubuntu
+1. http://www.wikihow.com/Install-Oracle-Java-on-Ubuntu-Linux
+2. https://techhelpkb.com/enable-and-disable-java-in-firefox/
+
+How to enable port in 
+1. netstat -ntl
+2. install gufw (enable in rules)
+3. 
