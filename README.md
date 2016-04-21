@@ -719,5 +719,6 @@ Wi-Fi Testing - To configure in station mode from AP mode
 Note : After soft/hard reset, inserting mwlwifi.ko gives error of phy adpater does not exist.
 After this, do power cycle for the board.
 
+in uboot: use command md to see register values, map to see device mapping
 
 
