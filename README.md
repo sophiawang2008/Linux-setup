@@ -484,3 +484,240 @@ How to enable port in
    sudo netstat -tulnp | grep portnumber
    if no output, means the port is closed
 2. use iptables to open the port
+
+=============================================
+Steps to setup and boot board from USB
+=============================================
+
+1. Insert 8 GB (or more) USB drive to the USB port of Linux PC. Create EXT4 file system on the storage device.
+        Note: Make sure you have correct device file as it will erase data from that device.
+        ( Here we will assume that USB has been mounted as /dev/sdb1 or /dev/sdb2 on linux machine.)
+
+        $ sudo apt-get install parted
+        $ sudo umount /dev/sdb
+        $ sudo fdisk /dev/sdb
+        Follow below steps:
+        Command (m for help): d
+                No partition yet
+        Command (m for help): n
+                Partition type:
+                p   primary (0 primary, 0 extended, 4 free)
+                e   extended
+        Select (default p): p
+        Partition number (1-4): 1
+        First cylinder (2048-15515648, default 2048): 2048
+                Using value 2048
+        Last cylinder or +size or +sizeM or +sizeK (2048-15515647, default 15515647): 15515647
+        Command (m for help): w
+                The partition table has been altered!
+
+2. Create ext4 file system on newly created partitions.
+        $ sudo mkfs.ext4 /dev/sdb1
+
+3. Un-plug and re-plug the USB drive to host computer.
+
+4. Check the newly created partition by mounting it and extract Ubuntu FS into it.
+        $ sudo mount /dev/sdb1 /mnt
+        $ sudo tar -xvf </path/to/>prebuilts/Ubuntu_fs.tar.gz -C /mnt
+        $ sync
+
+5. Setup the tftp server using section named "TFTP Server Install and Setup for boot kernel using tftp".
+
+6. Copy the prebuilt zImage and armada-385-brillo.dtb to /tftpboot folder on the host machine or compile using section "Compile kernel, device tree and Wifi module".
+
+7. Unmount the USB drive using below command:
+        $ sudo umount /dev/sdb1
+
+8. Insert the USB drive into USB2.0 port on board, power on board and enter following commands at U-Boot prompt.
+        $ setenv bootargs console=ttyS0,115200 root=/dev/sda1 rw rootwait noinitrd init=/sbin/init
+        $ setenv ipaddr <board_ip_address>; setenv serverip <server_ip_address> ;setenv bootcmd 'tftpboot 0x2000000 zImage; tftpboot 0x1000000 armada-385-brillo.dtb; bootz 0x2000000 - 0x1000000'
+        $ boot
+
+
+=============================================
+Compile kernel, device tree and Wifi module
+=============================================
+1. Extract the source code
+        $ tar -xvf kernel.tar.tgz
+
+2. Set environment variables
+        $ export ARCH=arm
+        $ export CROSS_COMPILE=/path/to/ARMADA385/toolchain/linux-gnueabi-toolchain-
+
+3. To compile the zImage, device tree and wifi module
+        $ cd /path/to/kernel
+        $ patch -p1 < </path/to/release_package>/source/0001-Added-mac80211-driver-mwlwifi-for-8864-module.patch
+        $ make mvebu_lsp_defconfig
+        $ make -j4 zImage
+        $ make armada-385-brillo.dtb
+        $ make modules
+4. Copy the compiled zImage and armada-385-brillo.dtb to /tftpboot folder on the host machine.
+
+5. Copy the compiled mwlwifi.ko driver into FS in <path/to/filesystem>/root/8864_driver directory. OR Copy the compiled mwlwifi.ko driver on the board at /root/8864_driver after board has been successfully booted up.
+
+
+==========================================================
+TFTP Server Install and Setup for boot kernel using tftp
+==========================================================
+1. Install following packages.
+    sudo apt-get install xinetd tftpd tftp
+
+2. Create /etc/xinetd.d/tftp and put this entry
+
+    service tftp
+    {
+    protocol        = udp
+    port            = 69
+    socket_type     = dgram
+    wait            = yes
+    user            = nobody
+    server          = /usr/sbin/in.tftpd
+    server_args     = /tftpboot
+    disable         = no
+   }
+
+3. Create a folder /tftpboot this should match whatever you gave in server_args.
+
+        $ sudo mkdir /tftpboot
+        $ sudo chmod -R 777 /tftpboot
+        $ sudo chown -R nobody /tftpboot
+
+4. Restart the xinetd service.
+        $ sudo service xinetd restart
+
+Now tftp server is up and running.
+
+===============================================================================
+                  8864 WiFi Testing for Andromeda Rev 2
+===============================================================================
+
+
+Pre-requisites: Already installed in prebuilts/Ubuntu_fs.tar.gz
+===============================================================
+- Need to install wpasupplicant package.
+  Note : Copy wpasupplicant_2.3-1+deb8u3_armhf.deb located at <release_package>source/package on board.
+- Need to install libpcsclite1 required by wpasupplicant pcakage.
+
+Use below commands to install both on board :
+    # apt-get install libpcsclite1
+    # dpkg --install wpasupplicant_2.3-1+deb8u3_armhf.deb
+
+Copy the below files located at <release_package>/source/wifi_config on board at /root/8864_driver if not available.
+- hostapd.conf 
+- hostapd.conf.wpa2psk
+- wpa_supplicant.conf.psk
+    
+    
+===========================================================================================
+Insert 8864 Module and Make interface up (If module is not inserted while board booting up) 
+===========================================================================================
+# cd /root/8864_driver
+# insmod mwlwifi.ko
+
+After above steps give following command.
+# ifconfig -a
+   The above command should show the wlan0 interface.
+
+Need to change MAC Address of interface wlan0, use below command.
+# ifconfig wlan0 hw ether 00:50:43:00:01:a8 up
+
+
+Note: After inserting module, by default board is in station mode.
+
+
+========================================
+Wi-Fi Testing - AP mode (Open Security)
+========================================
+1. Follow steps of "Insert 8864 Module and Make interface up" if not followed.
+2. Make sure br0 interface does not exist and ethernet is connected to internet and ethernet interface is eth0.
+3. Run the below script.
+        # /root/8864_driver/apMode-OpenSecurity
+        OR
+3.- Run below commnads.
+        # ifconfig wlan0 down
+        # hostapd -B /root/8864_driver/hostapd.conf.open
+        # brctl addbr br0
+        # brctl addif br0 eth0
+        # brctl addif br0 wlan0
+        # ifconfig eth0 up
+        # ifconfig wlan0 up
+        # ifconfig br0 up
+        # dhclient br0
+4. AP mode setted up with no security.
+        Open Wi-Fi on your mobile/Laptop, you can see the ANDROMEDA_REV2 and can connect to internet.
+
+
+==============================================
+Wi-Fi Testing - AP mode with WPA2PSK security
+==============================================
+1.Follow steps of "Insert 8864 Module and Make interface up" if not followed.
+2. Make sure br0 interface does not exist and ethernet is connected to internet and ethernet interface is eth0.
+3. Run the below script.
+        # /root/8864_driver/apMode-WPA2PSK
+        OR
+3. Run below commnads.
+        # ifconfig wlan0 down
+        # hostapd -B /root/8864_driver/hostapd.conf.wpa2psk
+        # brctl addbr br0
+        # brctl addif br0 eth0
+       # brctl addif br0 wlan0
+        # ifconfig eth0 up
+        # ifconfig wlan0 up
+        # ifconfig br0 up
+        # dhclient br0
+4. AP mode setted up with WPA2PSK security.
+        Open Wi-Fi on your mobile/Laptop, you can see the ANDROMEDA_REV2 and can connect to internet by entering the Password 12345678.
+
+
+=============================================
+Wi-Fi Testing - Station mode (OPEN Security)
+=============================================
+1. Follow steps of "Insert 8864 Module and Make interface up" if not followed.
+2. By default, interface         wlan0 is in Station mode.
+3. Edit wpa_supplicant.conf.open
+        network={
+        ssid="Marvell"  // AP Name
+        }
+4. Run the below script.
+        # /root/8864_driver/staMode-OpenSecurity
+        OR
+4. Run wpa_supplicant with the configuration file.
+        # wpa_supplicant -i wlan0 -c /root/8864_driver/wpa_supplicant.conf.open
+        # dhclient wlan0 &
+5. Check IP address using ifconfig command.
+        # ifconfig
+6. We should see the IP assigned to wlan0 interface and can access the internet.
+
+=================================================
+Wi-Fi Testing - Station mode (WPA2-PSK Security)
+=================================================
+1. Follow steps of "Insert 8864 Module and Make interface up" if not followed.
+2. Edit wpa_supplicant.conf.wpa2psk
+        network={
+        ssid=”hidden_ssid” // AP Name
+        key_mgmt=WPA-PSK
+        psk=”secretpassword” // Password
+        }
+3. Run the below script.
+        # /root/8864_driver/staMode-WPA2PSK
+        OR
+3. Run wpa_supplicant with the configuration file.
+        # wpa_supplicant -i wlan0 -c /root/8864_driver/wpa_supplicant.conf.wpa2psk &
+        # dhclient wlan0
+4. Check IP address using ifconfig command.
+        # ifconfig
+5. We should see the IP assigned to wlan0 interface and can access the internet.
+
+==========================================================
+Wi-Fi Testing - To configure in station mode from AP mode
+==========================================================
+# ifconfig wlan0 down
+# ifconfig br0 down
+# brctl delbr br0
+# iw wlan0 set type managed
+
+Note : After soft/hard reset, inserting mwlwifi.ko gives error of phy adpater does not exist.
+After this, do power cycle for the board.
+
+
+
