@@ -725,3 +725,7 @@ To add one file (one board support in Linux)
 1. modify makefile
 2. modify kConfig
 3. modify defconfig
+
+How to forcefully umount device 
+fuser -km /mnt
+unmount /mnt
