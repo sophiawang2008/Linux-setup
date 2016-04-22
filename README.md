@@ -721,4 +721,7 @@ After this, do power cycle for the board.
 
 in uboot: use command md to see register values, map to see device mapping
 
-
+To add one file (one board support in Linux)
+1. modify makefile
+2. modify kConfig
+3. modify defconfig
